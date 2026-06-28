@@ -33,7 +33,6 @@
             <h3 class="font-black text-lg text-purple-900 uppercase">Collect Split Payment</h3>
             <p class="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-4">Instant Account Split Engine Enabled</p>
             
-            <!-- Real-time QR Code Box Container -->
             <div class="bg-neutral-100 p-4 rounded-2xl inline-block mb-4 shadow-inner">
                 <img id="qr-box-img" src="" class="w-48 h-48 mx-auto object-contain" alt="Split Payment UPI Link Code">
             </div>
@@ -54,7 +53,17 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        const firebaseConfig = { databaseURL: "https://master-web-app-d8d1b-default-rtdb.firebaseio.com" };
+        // Integrated exact configurations provided
+        const firebaseConfig = {
+            apiKey: "AIzaSyAvBXVAJgqtxC3ErO56qO9Js-fduIlytKM",
+            authDomain: "lasya-parlour.firebaseapp.com",
+            projectId: "lasya-parlour",
+            storageBucket: "lasya-parlour.firebasestorage.app",
+            messagingSenderId: "644324702204",
+            appId: "1:644324702204:web:32e0b28a5289e187d62479",
+            measurementId: "G-2CNJY32G85"
+        };
+
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
@@ -121,7 +130,6 @@
         }
 
         window.triggerPaymentSplitGate = (id, totalAmount) => {
-            // Setup custom rule percentages (60% to supervisor owner / 40% kept by field agent)
             const ownerPart = Math.round(totalAmount * 0.60);
             const agentPart = totalAmount - ownerPart;
 
@@ -129,16 +137,14 @@
             document.getElementById('p-owner').innerText = `₹${ownerPart}`;
             document.getElementById('p-agent').innerText = `₹${agentPart}`;
 
-            // Generate UPI Intent String Structure safely mapped with split data references
-            const sampleUPI = `upi://pay?pa=lasyaparlour@okaxis&pn=Lasya%20Owner&am=${totalAmount}&cu=INR&tn=Split_Node_${id}_Owner_${ownerPart}_Agent_${agentPart}`;
+            const sampleUPI = `upi://pay?pa=lasyaparlour@okaxis&pn=Lasya%20Owner&am=${totalAmount}&cu=INR&tn=Split_${id}_Owner_${ownerPart}_Agent_${agentPart}`;
             
-            // Generate QR Code via open-source API dynamically
             document.getElementById('qr-box-img').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(sampleUPI)}`;
             document.getElementById('payment-modal').style.display = 'flex';
 
             document.getElementById('confirm-payment-settled').onclick = () => {
                 update(ref(db, `lasya_bookings/${id}`), { status: "completed_paid" }).then(() => {
-                    alert("Job finalized, payment verified, and allocation values split successfully!");
+                    alert("Job finalized and payment recorded across accounts!");
                     document.getElementById('payment-modal').style.display = 'none';
                 });
             };
