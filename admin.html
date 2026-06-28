@@ -29,7 +29,8 @@
                     <thead>
                         <tr class="bg-slate-100 text-[10px] font-black uppercase text-slate-500 border-b">
                             <th class="p-3">Customer Profile</th>
-                            <th class="p-3">Requested Route</th>
+                            <th class="p-3">Service Details</th>
+                            <th class="p-3">Destination Address</th>
                             <th class="p-3">Price</th>
                             <th class="p-3">Status</th>
                             <th class="p-3 text-right">Assign Employee</th>
@@ -118,7 +119,7 @@
         const db = getDatabase(app);
 
         // Map Component Instantiation
-        const map = L.map('admin-map').setView([13.6288, 79.4192], 13); // Default view initialized for Tirupati focus area
+        const map = L.map('admin-map').setView([13.6288, 79.4192], 13);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
         let liveMarkers = {};
 
@@ -139,7 +140,7 @@
             });
         });
 
-        // Initialize default core service cards if path is completely clear
+        // Initialize fallback services if database is clean
         onValue(ref(db, 'lasya_services'), (snap) => {
             if(!snap.exists()) {
                 const fallback = {
@@ -151,7 +152,6 @@
                 return;
             }
             
-            // Build out Management Render Rows
             const container = document.getElementById('srv-management-list');
             container.innerHTML = "";
             snap.forEach(child => {
@@ -193,11 +193,14 @@
             });
         });
 
-        // Core Bookings Pipeline Render
+        // Core Bookings Pipeline Render with Address Column Context
         onValue(ref(db, 'lasya_bookings'), (snap) => {
             const tableBody = document.getElementById('admin-bookings-rows');
             tableBody.innerHTML = "";
-            if(!snap.exists()) { return; }
+            if(!snap.exists()) { 
+                tableBody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-400 font-bold uppercase">No bookings active</td></tr>`;
+                return; 
+            }
 
             snap.forEach(child => {
                 const bKey = child.key;
@@ -206,26 +209,27 @@
                 let selectorBlock = '';
                 if(booking.status === 'pending') {
                     selectorBlock = `
-                        <select onchange="assignAgent('${bKey}', this.value)" class="p-1.5 border rounded-xl font-bold bg-amber-50 text-xs">
-                            <option value="">-- Assign Employee --</option>
+                        <select onchange="assignAgent('${bKey}', this.value)" class="p-1.5 border rounded-xl font-bold bg-amber-50 text-xs text-amber-900 border-amber-300">
+                            <option value="">-- Dispatch Staff --</option>
                             ${registeredStaffIds.map(id => `<option value="${id}">${id.toUpperCase()}</option>`).join('')}
                         </select>`;
                 } else {
-                    selectorBlock = `<span class="text-xs font-mono bg-purple-100 text-purple-800 px-2 py-1 rounded font-bold uppercase">${booking.assignedAgent}</span>`;
+                    selectorBlock = `<span class="text-xs font-mono bg-purple-100 text-purple-800 px-2 py-1 rounded font-bold uppercase">Assigned: ${booking.assignedAgent}</span>`;
                 }
 
                 tableBody.innerHTML += `
-                    <tr class="border-b text-xs">
+                    <tr class="border-b hover:bg-slate-50 text-xs">
                         <td class="p-3"><strong>${booking.customerName}</strong><div class="text-[10px] text-slate-400">${booking.customerPhone}</div></td>
                         <td class="p-3 font-bold text-purple-950">${booking.serviceName}</td>
+                        <td class="p-3 text-slate-600 italic max-w-[200px] truncate" title="${booking.address || 'N/A'}">${booking.address || 'No Address Provided'}</td>
                         <td class="p-3 font-bold">₹${booking.finalPrice}</td>
-                        <td class="p-3 uppercase font-bold text-[10px]">${booking.status}</td>
+                        <td class="p-3 uppercase font-bold text-[10px] text-purple-600">${booking.status}</td>
                         <td class="p-3 text-right">${selectorBlock}</td>
                     </tr>`;
             });
         });
 
-        // Global Operations CRUD Scope Handling Linkers
+        // Global Form Linkers
         window.editService = (id, srvDataEscaped) => {
             const srv = JSON.parse(decodeURIComponent(srvDataEscaped));
             document.getElementById('srv-edit-id').value = id;
@@ -248,7 +252,7 @@
                 discount: parseInt(document.getElementById('srv-discount').value),
                 desc: document.getElementById('srv-desc').value
             }).then(() => {
-                alert("Service modified successfully.");
+                alert("Service catalog updated.");
                 document.getElementById('service-crud-form').reset();
                 document.getElementById('srv-edit-id').value = "";
             });
@@ -264,10 +268,9 @@
 
         document.getElementById('employee-crud-form').onsubmit = (e) => {
             e.preventDefault();
-            const editId = document.getElementById('emp-edit-id').value;
             const username = document.getElementById('emp-username').value.trim().toLowerCase().replace(/[^a-z0-9_]/g, "");
             update(ref(db, `lasya_staff/${username}`), { fullname: document.getElementById('emp-fullname').value.trim() }).then(() => {
-                alert("Employee properties updated.");
+                alert("Staff settings compiled.");
                 document.getElementById('employee-crud-form').reset();
                 document.getElementById('emp-username').disabled = false;
                 document.getElementById('emp-edit-id').value = "";
@@ -276,10 +279,11 @@
 
         window.assignAgent = (id, agentId) => {
             if(!agentId) return;
-            update(ref(db, `lasya_bookings/${id}`), { assignedAgent: agentId, status: "assigned" });
+            update(ref(db, `lasya_bookings/${id}`), { assignedAgent: agentId, status: "assigned" })
+                .then(() => alert(`Dispatched to ${agentId.toUpperCase()}`));
         };
 
-        // CALENDAR LEDGER COMPUTE LOGIC
+        // Ledger Summary Range Calculator
         document.getElementById('generate-report-btn').onclick = () => {
             const rawTargetDate = document.getElementById('report-date-picker').value;
             if(!rawTargetDate) { alert("Please select a tracking anchor date."); return; }
