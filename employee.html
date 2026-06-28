@@ -3,49 +3,54 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lasya Terminal - Field Agent View</title>
+    <title>Lasya Terminal - Employee View</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-neutral-900 text-neutral-100 font-sans pb-12">
 
-    <!-- Header Navigation Bar -->
     <header class="bg-neutral-950 p-4 border-b border-neutral-800 flex justify-between items-center">
         <div>
-            <h1 class="text-xs font-black text-pink-500 uppercase">Lasya Staff Portal</h1>
-            <p id="active-user-banner" class="text-[11px] text-neutral-400 font-bold">Session Closed</p>
+            <h1 class="text-xs font-black text-pink-500 uppercase">Lasya Employee Portal</h1>
+            <p id="active-user-banner" class="text-[11px] text-neutral-400 font-bold">Please log in</p>
         </div>
-        <select id="staff-login-select" class="bg-neutral-800 text-white border text-xs font-bold p-1.5 rounded-xl outline-none">
+        <select id="staff-login-select" class="bg-neutral-800 text-white border border-neutral-700 text-xs font-bold p-1.5 rounded-xl outline-none">
             <option value="">Choose Login Name</option>
         </select>
     </header>
 
-    <!-- Main Workspace Container -->
     <main class="max-w-md mx-auto p-4 space-y-4">
-        <div id="gps-status-bar" class="hidden text-center text-[10px] font-black uppercase p-2 bg-blue-950 rounded-xl text-blue-400 border border-blue-800">
-            📡 Live GPS Tracking Active Engine Online
+        
+        <div id="tracking-control-box" class="hidden bg-neutral-800 p-3 rounded-2xl border border-neutral-700 flex items-center justify-between">
+            <div>
+                <p class="text-xs font-bold">Live GPS Location Transmitter</p>
+                <p id="tracking-status-text" class="text-[10px] text-neutral-400 font-medium">Status: Inactive</p>
+            </div>
+            <button id="toggle-location-btn" onclick="toggleLocationTracking()" class="bg-red-600 hover:bg-red-700 text-white font-bold text-[11px] px-4 py-2 rounded-xl uppercase tracking-wider transition">
+                Start Tracking 📡
+            </button>
         </div>
         
-        <h2 class="text-xs font-black uppercase text-neutral-400 tracking-wider">Assigned Task Pipeline</h2>
+        <h2 class="text-xs font-black uppercase text-neutral-400 tracking-wider">My Assigned Task Pipeline</h2>
         <div id="agent-jobs-container" class="space-y-4"></div>
     </main>
 
-    <!-- Dynamic Account Division QR Overlay Modal -->
     <div id="payment-modal" class="fixed inset-0 bg-black/95 z-50 hidden items-center justify-center p-6">
         <div class="bg-white w-full max-w-xs rounded-3xl p-6 text-center text-neutral-900">
             <h3 class="font-black text-base text-purple-900 uppercase">Collect Split Payment</h3>
             <div class="bg-neutral-100 p-3 rounded-2xl inline-block my-3">
-                <img id="qr-box-img" src="" class="w-44 h-44 mx-auto object-contain" alt="Payment Code">
+                <img id="qr-box-img" src="" class="w-44 h-44 mx-auto object-contain">
             </div>
             <div class="bg-purple-50 p-3 rounded-xl text-left text-xs font-bold space-y-1 text-purple-950 mb-4">
-                <div class="flex justify-between"><span>Total Collected:</span><span id="p-total">₹0</span></div>
+                <div class="flex justify-between"><span>Total Bill Amount:</span><span id="p-total">₹0</span></div>
                 <div class="flex justify-between text-pink-600"><span>Owner Share (60%):</span><span id="p-owner">₹0</span></div>
-                <div class="flex justify-between text-blue-600"><span>Your Share (40%):</span><span id="p-agent">₹0</span></div>
+                <div class="flex justify-between text-blue-600"><span>Your Commission (40%):</span><span id="p-agent">₹0</span></div>
             </div>
-            <button id="confirm-payment-settled" class="w-full bg-green-600 text-white font-black py-3 rounded-xl text-xs uppercase">Complete Assignment</button>
+            <button id="confirm-payment-settled" class="w-full bg-green-600 text-white font-black py-3 rounded-xl text-xs uppercase tracking-wider">
+                Confirm Cash/UPI Paid & Close ✅
+            </button>
         </div>
     </div>
 
-    <!-- Firebase System Modules Integration -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
@@ -64,8 +69,9 @@
 
         let CURRENT_AGENT = localStorage.getItem('lasya_agent') || "";
         let gpsWatchId = null;
+        let isTrackingActive = false;
 
-        // Synchronize drop-down with registered database employees
+        // Synchronize drop-down values with registered employees path
         onValue(ref(db, 'lasya_staff'), (snap) => {
             const select = document.getElementById('staff-login-select');
             select.innerHTML = `<option value="">Choose Login Name</option>`;
@@ -75,80 +81,112 @@
             if(CURRENT_AGENT) { 
                 select.value = CURRENT_AGENT; 
                 renderAgentWorkspace(); 
-                startLocationTracking(); 
             }
         });
 
         document.getElementById('staff-login-select').addEventListener('change', (e) => {
             CURRENT_AGENT = e.target.value;
             localStorage.setItem('lasya_agent', CURRENT_AGENT);
+            
+            // Turn off old background streams immediately on identity shift
+            if(gpsWatchId) { navigator.geolocation.clearWatch(gpsWatchId); gpsWatchId = null; }
+            isTrackingActive = false;
+            
             renderAgentWorkspace();
-            startLocationTracking();
         });
 
-        // Completed Continuous Geolocation Watch Engine
-        function startLocationTracking() {
-            if(gpsWatchId) navigator.geolocation.clearWatch(gpsWatchId);
-            if(!CURRENT_AGENT) { 
-                document.getElementById('gps-status-bar').style.display = 'none'; 
-                return; 
-            }
+        // Track Location Toggle Feature Loop Execution
+        window.toggleLocationTracking = () => {
+            const btn = document.getElementById('toggle-location-btn');
+            const txt = document.getElementById('tracking-status-text');
 
-            document.getElementById('gps-status-bar').style.display = 'block';
-            
-            gpsWatchId = navigator.geolocation.watchPosition((pos) => {
-                update(ref(db, `lasya_locations/${CURRENT_AGENT}`), {
-                    lat: pos.coords.latitude,
-                    lng: pos.coords.longitude,
-                    updatedAt: new Date().toISOString()
+            if(!isTrackingActive) {
+                isTrackingActive = true;
+                btn.className = "bg-green-600 hover:bg-green-700 text-white font-bold text-[11px] px-4 py-2 rounded-xl uppercase tracking-wider transition";
+                btn.innerText = "Tracking ON 🛰️";
+                txt.innerText = "Status: Broadcasting Coordinates...";
+                txt.className = "text-[10px] text-green-400 font-bold animate-pulse";
+
+                gpsWatchId = navigator.geolocation.watchPosition((pos) => {
+                    update(ref(db, `lasya_locations/${CURRENT_AGENT}`), {
+                        lat: pos.coords.latitude,
+                        lng: pos.coords.longitude,
+                        updatedAt: new Date().toISOString()
+                    });
+                }, (err) => console.log("Awaiting GPS signal permissions...", err), {
+                    enableHighAccuracy: true,
+                    maximumAge: 5000
                 });
-            }, (err) => {
-                console.warn("GPS Lock pending permission or signal...", err);
-            }, {
-                enableHighAccuracy: true,
-                maximumAge: 10000,
-                timeout: 5000
-            });
-        }
+            } else {
+                isTrackingActive = false;
+                if(gpsWatchId) { navigator.geolocation.clearWatch(gpsWatchId); gpsWatchId = null; }
+                
+                btn.className = "bg-red-600 hover:bg-red-700 text-white font-bold text-[11px] px-4 py-2 rounded-xl uppercase tracking-wider transition";
+                btn.innerText = "Start Tracking 📡";
+                txt.innerText = "Status: Inactive";
+                txt.className = "text-[10px] text-neutral-400 font-medium";
+            }
+        };
 
-        // Render target active bookings for the logged-in agent
         function renderAgentWorkspace() {
             const banner = document.getElementById('active-user-banner');
             const container = document.getElementById('agent-jobs-container');
+            const trackBox = document.getElementById('tracking-control-box');
+            
             if(!CURRENT_AGENT) {
-                banner.innerText = "Session Closed";
-                container.innerHTML = `<div class="bg-neutral-800 p-6 rounded-2xl text-center text-xs font-bold uppercase text-neutral-500">Awaiting Auth...</div>`;
+                banner.innerText = "Please log in";
+                trackBox.style.display = 'none';
+                container.innerHTML = `<div class="bg-neutral-800 p-6 rounded-2xl text-center text-xs font-bold uppercase text-neutral-500">Authentication Waiting...</div>`;
                 return;
             }
+
             banner.innerText = `Active Session: ${CURRENT_AGENT.toUpperCase()}`;
+            trackBox.style.display = 'flex';
 
             onValue(ref(db, 'lasya_bookings'), (snap) => {
                 container.innerHTML = "";
                 let hasJob = false;
+
                 snap.forEach((child) => {
                     const bKey = child.key;
                     const bData = child.val();
+
                     if(bData.assignedAgent === CURRENT_AGENT && bData.status === 'assigned') {
                         hasJob = true;
+                        const employeeCommission = Math.round(bData.finalPrice * 0.40);
+
                         container.innerHTML += `
-                            <div class="bg-neutral-800 rounded-2xl p-4 border border-neutral-700 space-y-3">
-                                <h3 class="font-black text-sm text-white uppercase border-b border-neutral-700 pb-1">${bData.serviceName}</h3>
-                                <div class="text-xs space-y-1 text-neutral-300">
-                                    <p>👩‍🦱 <strong>${bData.customerName}</strong></p>
-                                    <p>📞 <span class="font-mono">${bData.customerPhone}</span></p>
-                                    <p class="text-neutral-400 italic text-[11px]">📍 Address: ${bData.address}</p>
+                            <div class="bg-neutral-800 rounded-2xl p-4 border border-neutral-700 space-y-3 shadow-md">
+                                <div class="border-b border-neutral-700 pb-2">
+                                    <span class="bg-pink-600 text-white font-black text-[9px] px-2 py-0.5 rounded uppercase tracking-wider">Assigned Task Details</span>
+                                    <h3 class="font-black text-sm text-white uppercase mt-1">${bData.serviceName}</h3>
                                 </div>
-                                <button onclick="triggerPaymentSplitGate('${bKey}', ${bData.finalPrice})" class="w-full bg-pink-600 text-white font-bold text-xs uppercase py-2.5 rounded-xl mt-2 shadow-lg">Collect Payment (₹${bData.finalPrice})</button>
+                                <div class="text-xs space-y-2 text-neutral-300">
+                                    <p>👩‍🦱 <span class="text-white font-bold">${bData.customerName}</span></p>
+                                    <p>📞 <span class="font-mono text-neutral-400">${bData.customerPhone}</span></p>
+                                    <p class="text-neutral-300 font-medium bg-neutral-900 p-2 rounded-xl border border-neutral-800">
+                                        📍 <strong class="text-white">Address:</strong> ${bData.address || 'No Address Provided'}
+                                    </p>
+                                    <div class="bg-purple-950/50 p-2.5 rounded-xl border border-purple-900/60 flex justify-between items-center text-[11px]">
+                                        <span class="text-purple-300 font-bold uppercase tracking-wider">Your Commission (40%):</span>
+                                        <span class="text-amber-400 text-sm font-black">₹${employeeCommission}</span>
+                                    </div>
+                                </div>
+                                <div class="pt-1">
+                                    <button onclick="triggerPaymentSplitGate('${bKey}', ${bData.finalPrice})" class="w-full bg-pink-600 hover:bg-pink-700 text-white font-bold text-xs uppercase tracking-wide py-3 rounded-xl transition shadow-lg">
+                                        Service Completed & Collect Money ✓
+                                    </button>
+                                </div>
                             </div>`;
                     }
                 });
+
                 if(!hasJob) {
-                    container.innerHTML = `<div class="bg-neutral-800 p-6 rounded-2xl text-center text-xs text-neutral-500 font-bold uppercase">No visits assigned currently</div>`;
+                    container.innerHTML = `<div class="bg-neutral-800 p-8 rounded-2xl text-center text-xs font-bold uppercase text-neutral-500 tracking-wider">No visits assigned currently</div>`;
                 }
             });
         }
 
-        // Handle Payment Modals and UPI Splits
         window.triggerPaymentSplitGate = (id, totalAmount) => {
             const ownerPart = Math.round(totalAmount * 0.60);
             const agentPart = totalAmount - ownerPart;
@@ -162,8 +200,12 @@
             document.getElementById('payment-modal').style.display = 'flex';
 
             document.getElementById('confirm-payment-settled').onclick = () => {
-                update(ref(db, `lasya_bookings/${id}`), { status: "completed_paid" }).then(() => {
-                    alert("Job finalized and payment logged successfully!");
+                // ADDED TIMESTAMPS: Added 'timestamp' update so analytics can capture dates correctly
+                update(ref(db, `lasya_bookings/${id}`), { 
+                    status: "completed_paid",
+                    timestamp: new Date().toISOString()
+                }).then(() => {
+                    alert("Job finalized and split payment recorded perfectly!");
                     document.getElementById('payment-modal').style.display = 'none';
                 });
             };
