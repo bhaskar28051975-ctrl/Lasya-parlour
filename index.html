@@ -2,108 +2,96 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Lasya Beauty Parlour - Salon at Home</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lasya Beauty Parlour - Home Services</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-pink-50/50 text-neutral-800">
+<body class="bg-pink-50/50 text-neutral-800 pb-12">
 
-    <!-- Header Navigation -->
     <header class="bg-gradient-to-r from-pink-700 to-purple-800 text-white p-4 text-center sticky top-0 z-50 border-b-4 border-amber-400 shadow-md">
         <h1 class="text-xl font-black tracking-wider uppercase">Lasya Beauty Parlour</h1>
         <p class="text-xs text-pink-200 font-bold">Premium Salon at Home Services</p>
     </header>
 
-    <!-- Main Booking Hub Content -->
-    <main class="max-w-md mx-auto p-4 space-y-6">
-        
-        <div class="bg-white rounded-3xl p-5 shadow-sm border border-pink-100 text-center">
-            <h2 class="text-xl font-black text-purple-900 uppercase">Salon at Home</h2>
-            <p class="text-xs text-neutral-500 font-semibold mt-1">Professional beauticians right to your doorstep</p>
+    <main class="max-w-md mx-auto p-4 space-y-4">
+        <div class="bg-white rounded-3xl p-4 shadow-sm border border-pink-100 text-center">
+            <h2 class="text-lg font-black text-purple-900 uppercase">Salon at Home Menu</h2>
+            <p class="text-xs text-neutral-500 font-semibold">Professional beauticians dispatched straight to your doorstep</p>
         </div>
 
-        <!-- Dynamic Service Showcase Deck -->
-        <div id="services-deck" class="space-y-4">
-            <!-- Services injected via JavaScript -->
-        </div>
+        <div id="services-deck" class="space-y-4"></div>
     </main>
 
-    <!-- Customer Details Input Overlay Modal -->
     <div id="booking-modal" class="fixed inset-0 bg-black/80 z-50 hidden items-center justify-center p-4">
         <div class="bg-white w-full max-w-sm rounded-3xl p-6 relative">
-            <button onclick="closeBookingModal()" class="absolute top-4 right-4 text-gray-400 text-lg">✕</button>
-            <h3 class="font-black text-purple-900 uppercase text-lg mb-1">Confirm Home Booking</h3>
+            <button onclick="closeBookingModal()" class="absolute top-4 right-4 text-gray-400">✕</button>
+            <h3 class="font-black text-purple-900 uppercase text-base mb-1">Confirm Home Booking</h3>
             <p id="target-service-txt" class="text-xs font-bold text-amber-600 uppercase mb-4">---</p>
             
             <form id="customer-booking-form" class="space-y-3">
                 <div>
                     <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Your Full Name</label>
-                    <input id="c-name" type="text" required class="w-full p-3 border rounded-xl outline-none focus:border-pink-600 text-sm font-semibold">
+                    <input id="c-name" type="text" required class="w-full p-2.5 border rounded-xl text-sm font-semibold">
                 </div>
                 <div>
                     <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Contact Phone Number</label>
-                    <input id="c-phone" type="tel" required class="w-full p-3 border rounded-xl outline-none focus:border-pink-600 font-mono text-sm">
+                    <input id="c-phone" type="tel" required class="w-full p-2.5 border rounded-xl font-mono text-sm">
                 </div>
                 <div>
-                    <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Full Delivery Address / Location</label>
-                    <textarea id="c-address" rows="2" required class="w-full p-3 border rounded-xl outline-none focus:border-pink-600 text-sm"></textarea>
+                    <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Delivery Address</label>
+                    <textarea id="c-address" rows="2" required class="w-full p-2.5 border rounded-xl text-sm"></textarea>
                 </div>
-                <button type="submit" class="w-full bg-pink-600 hover:bg-pink-700 text-white font-black py-4 rounded-xl text-xs uppercase tracking-wider shadow-md mt-2 transition">
+                <button type="submit" class="w-full bg-pink-600 text-white font-black py-3 rounded-xl text-xs uppercase tracking-wider shadow-md mt-2">
                     Request Appointment Live 🚀
                 </button>
             </form>
         </div>
     </div>
 
-    <!-- FIREBASE INITIALIZATION ENGINE -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getDatabase, ref, onValue, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        // Integrated exact configurations provided
         const firebaseConfig = {
             apiKey: "AIzaSyAvBXVAJgqtxC3ErO56qO9Js-fduIlytKM",
             authDomain: "lasya-parlour.firebaseapp.com",
             projectId: "lasya-parlour",
+            databaseURL: "https://lasya-parlour-default-rtdb.firebaseio.com",
             storageBucket: "lasya-parlour.firebasestorage.app",
             messagingSenderId: "644324702204",
-            appId: "1:644324702204:web:32e0b28a5289e187d62479",
-            measurementId: "G-2CNJY32G85"
+            appId: "1:644324702204:web:32e0b28a5289e187d62479"
         };
-
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // Core Services with regional localized image configurations
-        const salonServices = [
-            { id: "s1", title: "Pre-Bridal Makeover", desc: "Premium South Indian Bride full traditional luxury look styling and pure jasmine floral set adjustments.", original: 4999, discount: 2999, img: "https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=600&q=80" },
-            { id: "s2", title: "Kids Boby Cut & Styling", desc: "Gentle home haircut setups tailored specifically for children and cute baby styles.", original: 499, discount: 249, img: "https://images.unsplash.com/photo-1601924994987-69e26d50dc26?w=600&q=80" },
-            { id: "s3", title: "College Girls Party Look", desc: "Trendy modern lookups, stylish light cosmetics, and glowing profiles for college festivals.", original: 1499, discount: 799, img: "https://images.unsplash.com/photo-1621184455862-c163dfb30e0f?w=600&q=80" },
-            { id: "s4", title: "Traditional Henna Mehendi", desc: "Rich premium organic color artwork layouts for celebrations and family functions.", original: 999, discount: 499, img: "https://images.unsplash.com/photo-1612548403247-aa287df71abd?w=600&q=80" }
-        ];
-
         let selectedService = null;
 
-        const deck = document.getElementById('services-deck');
-        salonServices.forEach(srv => {
-            deck.innerHTML += `
-                <div class="bg-white rounded-2xl shadow-md overflow-hidden border border-pink-100 flex flex-col">
-                    <img src="${srv.img}" class="w-full h-48 object-cover object-top" alt="Service Showcase">
-                    <div class="p-4 flex-1 flex flex-col justify-between">
-                        <div>
-                            <h3 class="text-base font-black text-purple-950 uppercase tracking-tight">${srv.title}</h3>
-                            <p class="text-neutral-500 text-xs mt-1 leading-relaxed">${srv.desc}</p>
+        // Sync with dynamically managed database services path
+        onValue(ref(db, 'lasya_services'), (snap) => {
+            const deck = document.getElementById('services-deck');
+            deck.innerHTML = "";
+            if(!snap.exists()){
+                deck.innerHTML = `<p class='text-center text-xs text-neutral-400 font-bold py-8 uppercase'>Updating Catalog...</p>`;
+                return;
+            }
+            snap.forEach(child => {
+                const srv = child.val();
+                deck.innerHTML += `
+                    <div class="bg-white rounded-2xl shadow-md overflow-hidden border border-pink-100">
+                        <img src="${srv.img}" class="w-full h-44 object-cover object-top">
+                        <div class="p-4">
+                            <h3 class="text-base font-black text-purple-950 uppercase">${srv.title}</h3>
+                            <p class="text-neutral-500 text-xs mt-1">${srv.desc}</p>
                             <div class="flex items-center gap-2 mt-3">
                                 <span class="text-lg font-black text-pink-600">₹${srv.discount}</span>
                                 <span class="text-xs font-bold text-neutral-400 line-through">₹${srv.original}</span>
-                                <span class="bg-green-100 text-green-700 font-extrabold text-[9px] px-2 py-0.5 rounded-full uppercase">Save ₹${srv.original - srv.discount}</span>
                             </div>
+                            <button onclick="openBookingModal('${srv.title}', ${srv.discount})" class="w-full bg-purple-900 text-white font-bold text-xs uppercase py-2.5 rounded-xl mt-3">
+                                Book Service @ Home
+                            </button>
                         </div>
-                        <button onclick="openBookingModal('${srv.title}', ${srv.discount})" class="w-full bg-purple-900 hover:bg-purple-950 text-white font-bold text-xs uppercase tracking-wide py-3 rounded-xl mt-4 transition">
-                            Book Service @ Home
-                        </button>
-                    </div>
-                </div>`;
+                    </div>`;
+            });
         });
 
         window.openBookingModal = (title, price) => {
@@ -111,26 +99,21 @@
             document.getElementById('target-service-txt').innerText = `${title} - ₹${price}`;
             document.getElementById('booking-modal').style.display = 'flex';
         };
-
-        window.closeBookingModal = () => {
-            document.getElementById('booking-modal').style.display = 'none';
-        };
+        window.closeBookingModal = () => { document.getElementById('booking-modal').style.display = 'none'; };
 
         document.getElementById('customer-booking-form').onsubmit = (e) => {
             e.preventDefault();
-            const payload = {
+            push(ref(db, 'lasya_bookings'), {
                 serviceName: selectedService.title,
                 finalPrice: selectedService.price,
                 customerName: document.getElementById('c-name').value.trim(),
                 customerPhone: document.getElementById('c-phone').value.trim(),
                 address: document.getElementById('c-address').value.trim(),
-                status: "pending", 
+                status: "pending",
                 assignedAgent: "",
                 timestamp: new Date().toISOString()
-            };
-
-            push(ref(db, 'lasya_bookings'), payload).then(() => {
-                alert("Order submitted successfully! The owner will assign an expert beautician shortly.");
+            }).then(() => {
+                alert("Order submitted! The supervisor will assign an expert beautician shortly.");
                 document.getElementById('customer-booking-form').reset();
                 closeBookingModal();
             });
