@@ -3,113 +3,320 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lasya Control - Management Panel</title>
+    <title>Lasya Enterprise - Master Console</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
-<body class="bg-slate-50 text-slate-800 pb-12">
+<body class="bg-slate-100 text-slate-800 pb-24">
 
-    <header class="bg-purple-950 text-white p-5 border-b-4 border-pink-500 shadow-md">
-        <div class="max-w-4xl mx-auto">
-            <h1 class="text-xl font-black uppercase tracking-wider">Lasya Parlour Supervisor Hub</h1>
-            <p class="text-xs text-pink-300 font-bold">Assign Incoming Home Bookings to Beautician Agents</p>
-        </div>
+    <header class="bg-purple-950 text-white p-5 border-b-4 border-pink-600 shadow-md">
+        <h1 class="text-xl font-black uppercase tracking-wider">Lasya Parlour Executive Suite</h1>
+        <p class="text-xs text-pink-300 font-bold">Catalog Control, Staff Dispatch, Map Pipelines & Analytics Reports</p>
     </header>
 
-    <main class="max-w-4xl mx-auto p-4 mt-4">
-        <section class="bg-white rounded-2xl p-6 shadow-sm border">
-            <h2 class="font-black text-base uppercase text-slate-900 tracking-tight mb-4 flex items-center gap-2">
-                📥 Live On-Demand Incoming Bookings Pipeline
-            </h2>
-            
+    <main class="max-w-6xl mx-auto p-4 space-y-8 mt-4">
+
+        <section class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200">
+            <h2 class="font-black text-sm uppercase text-slate-900 mb-2">🗺️ Real-Time On-Field Employee Transit Monitor</h2>
+            <div id="admin-map" class="w-full h-80 rounded-xl bg-slate-200 border z-10"></div>
+        </section>
+
+        <section class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
+            <h2 class="font-black text-sm uppercase text-slate-900 mb-3">📥 Live Bookings Dispatch Operations</h2>
             <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
+                <table class="w-full text-left text-xs">
                     <thead>
-                        <tr class="border-b bg-slate-100 text-[10px] font-black text-slate-500 uppercase tracking-wider">
-                            <th class="p-3">Customer Details</th>
-                            <th class="p-3">Requested Service</th>
-                            <th class="p-3">Amount</th>
+                        <tr class="bg-slate-100 text-[10px] font-black uppercase text-slate-500 border-b">
+                            <th class="p-3">Customer Profile</th>
+                            <th class="p-3">Requested Route</th>
+                            <th class="p-3">Price</th>
                             <th class="p-3">Status</th>
-                            <th class="p-3 text-right">Dispatch & Assign Agent</th>
+                            <th class="p-3 text-right">Assign Employee</th>
                         </tr>
                     </thead>
-                    <tbody id="bookings-rows">
-                        <!-- Dynamic mapping entries -->
-                    </tbody>
+                    <tbody id="admin-bookings-rows"></tbody>
                 </table>
             </div>
+        </section>
+
+        <section class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+            <h2 class="font-black text-sm uppercase text-slate-900 mb-4">📊 Periodic Performance Ledger Analytics</h2>
+            <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-6">
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Specific Day Target</label>
+                    <input type="date" id="report-date-picker" class="w-full p-2 text-xs border rounded-xl bg-slate-50 font-bold">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Timeframe Period Filter</label>
+                    <select id="report-period-select" class="w-full p-2 text-xs border rounded-xl bg-slate-50 font-bold">
+                        <option value="daily">Daily Report</option>
+                        <option value="weekly">Weekly View</option>
+                        <option value="monthly">Monthly View</option>
+                        <option value="yearly">Yearly Summary</option>
+                    </select>
+                </div>
+                <div class="pt-4"><button id="generate-report-btn" class="bg-purple-900 text-white font-bold text-xs px-4 py-2 rounded-xl uppercase">Compute Metrics</button></div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
+                <div class="bg-slate-50 p-4 rounded-xl border"><div class="text-[10px] font-bold text-slate-400 uppercase">Gross Volume Cleared</div><div id="stat-gross" class="text-xl font-black text-slate-900 mt-1">₹0</div></div>
+                <div class="bg-pink-50 p-4 rounded-xl border border-pink-100"><div class="text-[10px] font-bold text-pink-600 uppercase">Owner Royalties (60%)</div><div id="stat-owner" class="text-xl font-black text-pink-700 mt-1">₹0</div></div>
+                <div class="bg-blue-50 p-4 rounded-xl border border-blue-100"><div class="text-[10px] font-bold text-blue-600 uppercase">Employee Commissions (40%)</div><div id="stat-agent" class="text-xl font-black text-blue-700 mt-1">₹0</div></div>
+            </div>
+        </section>
+
+        <section class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 space-y-4">
+                <h2 class="font-black text-sm uppercase text-purple-950 border-b pb-2">💇‍♀️ Services Catalog Registry (Add/Edit)</h2>
+                <form id="service-crud-form" class="space-y-2 text-xs">
+                    <input type="hidden" id="srv-edit-id">
+                    <div class="grid grid-cols-2 gap-2">
+                        <input type="text" id="srv-title" placeholder="Service Name" required class="p-2.5 border rounded-xl">
+                        <input type="url" id="srv-img" placeholder="Image Assets Link" required class="p-2.5 border rounded-xl">
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <input type="number" id="srv-original" placeholder="Original Price" required class="p-2.5 border rounded-xl">
+                        <input type="number" id="srv-discount" placeholder="Discount Price" required class="p-2.5 border rounded-xl">
+                    </div>
+                    <textarea id="srv-desc" placeholder="Operational Service Copy Details Description" rows="2" required class="w-full p-2.5 border rounded-xl"></textarea>
+                    <button type="submit" class="w-full bg-pink-600 text-white font-bold py-2 rounded-xl uppercase">Commit Catalog Item</button>
+                </form>
+                <div id="srv-management-list" class="space-y-2 max-h-60 overflow-y-auto pt-2"></div>
+            </div>
+
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 space-y-4">
+                <h2 class="font-black text-sm uppercase text-purple-950 border-b pb-2">👩‍🔧 Employee Staff Registry (Add/Edit)</h2>
+                <form id="employee-crud-form" class="space-y-2 text-xs">
+                    <input type="hidden" id="emp-edit-id">
+                    <div class="grid grid-cols-2 gap-2">
+                        <input type="text" id="emp-username" placeholder="Employee Code ID (eg: ramya)" required class="p-2.5 border rounded-xl">
+                        <input type="text" id="emp-fullname" placeholder="Full Name Label" required class="p-2.5 border rounded-xl">
+                    </div>
+                    <button type="submit" class="w-full bg-purple-900 text-white font-bold py-2 rounded-xl uppercase">Commit Employee Record</button>
+                </form>
+                <div id="emp-management-list" class="space-y-2 max-h-60 overflow-y-auto pt-2"></div>
+            </div>
+
         </section>
     </main>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getDatabase, ref, onValue, update, remove, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        // Integrated exact configurations provided
         const firebaseConfig = {
             apiKey: "AIzaSyAvBXVAJgqtxC3ErO56qO9Js-fduIlytKM",
             authDomain: "lasya-parlour.firebaseapp.com",
             projectId: "lasya-parlour",
+            databaseURL: "https://lasya-parlour-default-rtdb.firebaseio.com",
             storageBucket: "lasya-parlour.firebasestorage.app",
             messagingSenderId: "644324702204",
-            appId: "1:644324702204:web:32e0b28a5289e187d62479",
-            measurementId: "G-2CNJY32G85"
+            appId: "1:644324702204:web:32e0b28a5289e187d62479"
         };
-        
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        const availableAgents = ["agent_ramya", "agent_priya", "agent_anitha"];
+        // Map Component Instantiation
+        const map = L.map('admin-map').setView([13.6288, 79.4192], 13); // Default view initialized for Tirupati focus area
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+        let liveMarkers = {};
 
-        onValue(ref(db, 'lasya_bookings'), (snap) => {
-            const tableBody = document.getElementById('bookings-rows');
-            tableBody.innerHTML = "";
-            
+        // Track live employee locations on the map
+        onValue(ref(db, 'lasya_locations'), (snap) => {
+            snap.forEach(child => {
+                const empId = child.key;
+                const loc = child.val();
+                if(loc.lat && loc.lng) {
+                    if(liveMarkers[empId]) {
+                        liveMarkers[empId].setLatLng([loc.lat, loc.lng]);
+                    } else {
+                        liveMarkers[empId] = L.marker([loc.lat, loc.lng])
+                            .addTo(map)
+                            .bindPopup(`👥 Staff: ${empId.toUpperCase()}<br>⏱️ Last Seen: ${new Date(loc.updatedAt).toLocaleTimeString()}`);
+                    }
+                }
+            });
+        });
+
+        // Initialize default core service cards if path is completely clear
+        onValue(ref(db, 'lasya_services'), (snap) => {
             if(!snap.exists()) {
-                tableBody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-xs font-bold text-slate-400 uppercase">No active operations pending</td></tr>`;
+                const fallback = {
+                    "s1": { title: "Pre-Bridal Makeover", desc: "Premium South Indian Bride traditional styling.", original: 4999, discount: 2999, img: "https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=400&q=80" },
+                    "s2": { title: "Kids Boby Cut", desc: "Gentle custom haircut styling for children at home.", original: 499, discount: 249, img: "https://images.unsplash.com/photo-1601924994987-69e26d50dc26?w=400&q=80" },
+                    "s3": { title: "College Girls Party Look", desc: "Modern glowing profiles for college festivals.", original: 1499, discount: 799, img: "https://images.unsplash.com/photo-1621184455862-c163dfb30e0f?w=400&q=80" }
+                };
+                set(ref(db, 'lasya_services'), fallback);
                 return;
             }
+            
+            // Build out Management Render Rows
+            const container = document.getElementById('srv-management-list');
+            container.innerHTML = "";
+            snap.forEach(child => {
+                const key = child.key;
+                const srv = child.val();
+                container.innerHTML += `
+                    <div class="bg-slate-50 p-2 text-xs font-semibold flex items-center justify-between rounded-lg border">
+                        <span class="truncate pr-2">${srv.title} (₹${srv.discount})</span>
+                        <div class="flex gap-1 shrink-0">
+                            <button onclick="editService('${key}', '${encodeURIComponent(JSON.stringify(srv))}')" class="bg-amber-500 text-white px-2 py-0.5 rounded text-[10px] font-bold uppercase">Edit</button>
+                            <button onclick="deleteService('${key}')" class="bg-red-600 text-white px-2 py-0.5 rounded text-[10px] font-bold uppercase">Delete</button>
+                        </div>
+                    </div>`;
+            });
+        });
 
-            snap.forEach((child) => {
+        // Track and populate available staff lists
+        let registeredStaffIds = [];
+        onValue(ref(db, 'lasya_staff'), (snap) => {
+            registeredStaffIds = [];
+            const container = document.getElementById('emp-management-list');
+            container.innerHTML = "";
+            if(!snap.exists()) {
+                set(ref(db, 'lasya_staff/agent_ramya'), { fullname: "Ramya Staff Node" });
+                return;
+            }
+            snap.forEach(child => {
+                const empId = child.key;
+                const data = child.val();
+                registeredStaffIds.push(empId);
+                container.innerHTML += `
+                    <div class="bg-slate-50 p-2 text-xs font-semibold flex items-center justify-between rounded-lg border">
+                        <span>🆔 ${empId.toUpperCase()} - ${data.fullname}</span>
+                        <div class="flex gap-1">
+                            <button onclick="editEmployee('${empId}', '${data.fullname}')" class="bg-amber-500 text-white px-2 py-0.5 rounded text-[10px] font-bold uppercase">Edit</button>
+                            <button onclick="deleteEmployee('${empId}')" class="bg-red-600 text-white px-2 py-0.5 rounded text-[10px] font-bold uppercase">Delete</button>
+                        </div>
+                    </div>`;
+            });
+        });
+
+        // Core Bookings Pipeline Render
+        onValue(ref(db, 'lasya_bookings'), (snap) => {
+            const tableBody = document.getElementById('admin-bookings-rows');
+            tableBody.innerHTML = "";
+            if(!snap.exists()) { return; }
+
+            snap.forEach(child => {
                 const bKey = child.key;
                 const booking = child.val();
 
                 let selectorBlock = '';
                 if(booking.status === 'pending') {
                     selectorBlock = `
-                        <select onchange="assignAgent('${bKey}', this.value)" class="p-2 border rounded-xl font-bold bg-amber-50 text-xs border-amber-300 text-amber-900">
-                            <option value="">-- Choose Staff --</option>
-                            ${availableAgents.map(ag => `<option value="${ag}">${ag.replace('_',' ').toUpperCase()}</option>`).join('')}
+                        <select onchange="assignAgent('${bKey}', this.value)" class="p-1.5 border rounded-xl font-bold bg-amber-50 text-xs">
+                            <option value="">-- Assign Employee --</option>
+                            ${registeredStaffIds.map(id => `<option value="${id}">${id.toUpperCase()}</option>`).join('')}
                         </select>`;
                 } else {
-                    selectorBlock = `<span class="text-xs font-mono bg-purple-100 text-purple-800 px-2 py-1 rounded-md font-bold uppercase">${booking.assignedAgent}</span>`;
+                    selectorBlock = `<span class="text-xs font-mono bg-purple-100 text-purple-800 px-2 py-1 rounded font-bold uppercase">${booking.assignedAgent}</span>`;
                 }
 
-                let statusBadge = '';
-                if(booking.status === 'pending') statusBadge = `<span class="bg-amber-100 text-amber-800 text-[10px] font-black uppercase px-2 py-1 rounded-full">Pending</span>`;
-                else if(booking.status === 'assigned') statusBadge = `<span class="bg-blue-100 text-blue-800 text-[10px] font-black uppercase px-2 py-1 rounded-full">En Route</span>`;
-                else statusBadge = `<span class="bg-green-100 text-green-800 text-[10px] font-black uppercase px-2 py-1 rounded-full">Paid & Settled</span>`;
-
                 tableBody.innerHTML += `
-                    <tr class="border-b hover:bg-slate-50 text-xs font-medium">
-                        <td class="p-3">
-                            <div class="font-bold text-slate-900">${booking.customerName}</div>
-                            <div class="text-[10px] text-slate-400 font-mono">${booking.customerPhone}</div>
-                            <div class="text-[10px] text-slate-500 italic truncate max-w-[180px]">${booking.address}</div>
-                        </td>
+                    <tr class="border-b text-xs">
+                        <td class="p-3"><strong>${booking.customerName}</strong><div class="text-[10px] text-slate-400">${booking.customerPhone}</div></td>
                         <td class="p-3 font-bold text-purple-950">${booking.serviceName}</td>
-                        <td class="p-3 font-bold text-slate-900">₹${booking.finalPrice}</td>
-                        <td class="p-3">${statusBadge}</td>
+                        <td class="p-3 font-bold">₹${booking.finalPrice}</td>
+                        <td class="p-3 uppercase font-bold text-[10px]">${booking.status}</td>
                         <td class="p-3 text-right">${selectorBlock}</td>
                     </tr>`;
             });
         });
 
+        // Global Operations CRUD Scope Handling Linkers
+        window.editService = (id, srvDataEscaped) => {
+            const srv = JSON.parse(decodeURIComponent(srvDataEscaped));
+            document.getElementById('srv-edit-id').value = id;
+            document.getElementById('srv-title').value = srv.title;
+            document.getElementById('srv-img').value = srv.img;
+            document.getElementById('srv-original').value = srv.original;
+            document.getElementById('srv-discount').value = srv.discount;
+            document.getElementById('srv-desc').value = srv.desc;
+        };
+        window.deleteService = (id) => { if(confirm("Delete service permanently?")) remove(ref(db, `lasya_services/${id}`)); };
+
+        document.getElementById('service-crud-form').onsubmit = (e) => {
+            e.preventDefault();
+            const editId = document.getElementById('srv-edit-id').value;
+            const targetId = editId || 'srv_' + Date.now();
+            update(ref(db, `lasya_services/${targetId}`), {
+                title: document.getElementById('srv-title').value,
+                img: document.getElementById('srv-img').value,
+                original: parseInt(document.getElementById('srv-original').value),
+                discount: parseInt(document.getElementById('srv-discount').value),
+                desc: document.getElementById('srv-desc').value
+            }).then(() => {
+                alert("Service modified successfully.");
+                document.getElementById('service-crud-form').reset();
+                document.getElementById('srv-edit-id').value = "";
+            });
+        };
+
+        window.editEmployee = (id, fullname) => {
+            document.getElementById('emp-edit-id').value = id;
+            document.getElementById('emp-username').value = id;
+            document.getElementById('emp-username').disabled = true;
+            document.getElementById('emp-fullname').value = fullname;
+        };
+        window.deleteEmployee = (id) => { if(confirm("Remove this employee profile?")) remove(ref(db, `lasya_staff/${id}`)); };
+
+        document.getElementById('employee-crud-form').onsubmit = (e) => {
+            e.preventDefault();
+            const editId = document.getElementById('emp-edit-id').value;
+            const username = document.getElementById('emp-username').value.trim().toLowerCase().replace(/[^a-z0-9_]/g, "");
+            update(ref(db, `lasya_staff/${username}`), { fullname: document.getElementById('emp-fullname').value.trim() }).then(() => {
+                alert("Employee properties updated.");
+                document.getElementById('employee-crud-form').reset();
+                document.getElementById('emp-username').disabled = false;
+                document.getElementById('emp-edit-id').value = "";
+            });
+        };
+
         window.assignAgent = (id, agentId) => {
             if(!agentId) return;
-            update(ref(db, `lasya_bookings/${id}`), {
-                assignedAgent: agentId,
-                status: "assigned"
-            }).then(() => alert(`Task dispatched smoothly to agent ${agentId.toUpperCase()}!`));
+            update(ref(db, `lasya_bookings/${id}`), { assignedAgent: agentId, status: "assigned" });
+        };
+
+        // CALENDAR LEDGER COMPUTE LOGIC
+        document.getElementById('generate-report-btn').onclick = () => {
+            const rawTargetDate = document.getElementById('report-date-picker').value;
+            if(!rawTargetDate) { alert("Please select a tracking anchor date."); return; }
+            
+            const targetDate = new Date(rawTargetDate);
+            const chosenPeriod = document.getElementById('report-period-select').value;
+
+            onValue(ref(db, 'lasya_bookings'), (snap) => {
+                let grossVolume = 0;
+                snap.forEach(child => {
+                    const b = child.val();
+                    if(b.status === 'completed_paid' && b.timestamp) {
+                        const bDate = new Date(b.timestamp);
+                        let isMatch = false;
+
+                        if(chosenPeriod === 'daily') {
+                            isMatch = bDate.toDateString() === targetDate.toDateString();
+                        } else if(chosenPeriod === 'weekly') {
+                            const diff = Math.abs(targetDate - bDate);
+                            isMatch = (diff / (1000 * 60 * 60 * 24)) <= 7;
+                        } else if(chosenPeriod === 'monthly') {
+                            isMatch = (bDate.getMonth() === targetDate.getMonth()) && (bDate.getFullYear() === targetDate.getFullYear());
+                        } else if(chosenPeriod === 'yearly') {
+                            isMatch = bDate.getFullYear() === targetDate.getFullYear();
+                        }
+
+                        if(isMatch) grossVolume += parseInt(b.finalPrice || 0);
+                    }
+                });
+
+                const ownerShare = Math.round(grossVolume * 0.60);
+                const agentShare = grossVolume - ownerShare;
+
+                document.getElementById('stat-gross').innerText = `₹${grossVolume}`;
+                document.getElementById('stat-owner').innerText = `₹${ownerShare}`;
+                document.getElementById('stat-agent').innerText = `₹${agentShare}`;
+            }, { onlyOnce: true });
         };
     </script>
 </body>
