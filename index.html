@@ -9,7 +9,7 @@
 <body class="bg-pink-50/50 text-neutral-800">
 
     <!-- Header Navigation -->
-    <header class="bg-gradient-to-r freem-from-pink-600 from-pink-700 to-purple-800 text-white p-4 text-center sticky top-0 z-50 border-b-4 border-amber-400 shadow-md">
+    <header class="bg-gradient-to-r from-pink-700 to-purple-800 text-white p-4 text-center sticky top-0 z-50 border-b-4 border-amber-400 shadow-md">
         <h1 class="text-xl font-black tracking-wider uppercase">Lasya Beauty Parlour</h1>
         <p class="text-xs text-pink-200 font-bold">Premium Salon at Home Services</p>
     </header>
@@ -60,18 +60,26 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
+        // Integrated exact configurations provided
         const firebaseConfig = {
-            databaseURL: "https://master-web-app-d8d1b-default-rtdb.firebaseio.com"
+            apiKey: "AIzaSyAvBXVAJgqtxC3ErO56qO9Js-fduIlytKM",
+            authDomain: "lasya-parlour.firebaseapp.com",
+            projectId: "lasya-parlour",
+            storageBucket: "lasya-parlour.firebasestorage.app",
+            messagingSenderId: "644324702204",
+            appId: "1:644324702204:web:32e0b28a5289e187d62479",
+            measurementId: "G-2CNJY32G85"
         };
+
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // Core Static Services Data Array with requested Placeholders
+        // Core Services with regional localized image configurations
         const salonServices = [
-            { id: "s1", title: "Pre-Bridal Glow Makeover", desc: "Premium South Indian Bride full customized makeup and premium hair glow package styling.", original: 4999, discount: 2999, img: "https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=500&q=80" },
-            { id: "s2", title: "Kids Trendy Boby Cut", desc: "Expert, clean gentle baby haircut styling for children at home comfort settings.", original: 499, discount: 249, img: "https://images.unsplash.com/photo-1519699047748-de8e457a634e?w=500&q=80" },
-            { id: "s3", title: "College Girls Party Glam", desc: "Trendy, expressive dynamic glowing styles perfect for campus meetups and party gatherings.", original: 1499, discount: 799, img: "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=500&q=80" },
-            { id: "s4", title: "Traditional Festive Mehendi", desc: "Full organic customized traditional hand artistry designs detailing.", original: 999, discount: 499, img: "https://images.unsplash.com/photo-1612548403247-aa287df71abd?w=500&q=80" }
+            { id: "s1", title: "Pre-Bridal Makeover", desc: "Premium South Indian Bride full traditional luxury look styling and pure jasmine floral set adjustments.", original: 4999, discount: 2999, img: "https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=600&q=80" },
+            { id: "s2", title: "Kids Boby Cut & Styling", desc: "Gentle home haircut setups tailored specifically for children and cute baby styles.", original: 499, discount: 249, img: "https://images.unsplash.com/photo-1601924994987-69e26d50dc26?w=600&q=80" },
+            { id: "s3", title: "College Girls Party Look", desc: "Trendy modern lookups, stylish light cosmetics, and glowing profiles for college festivals.", original: 1499, discount: 799, img: "https://images.unsplash.com/photo-1621184455862-c163dfb30e0f?w=600&q=80" },
+            { id: "s4", title: "Traditional Henna Mehendi", desc: "Rich premium organic color artwork layouts for celebrations and family functions.", original: 999, discount: 499, img: "https://images.unsplash.com/photo-1612548403247-aa287df71abd?w=600&q=80" }
         ];
 
         let selectedService = null;
@@ -80,7 +88,7 @@
         salonServices.forEach(srv => {
             deck.innerHTML += `
                 <div class="bg-white rounded-2xl shadow-md overflow-hidden border border-pink-100 flex flex-col">
-                    <img src="${srv.img}" class="w-full h-44 object-cover" alt="Service Showcase">
+                    <img src="${srv.img}" class="w-full h-48 object-cover object-top" alt="Service Showcase">
                     <div class="p-4 flex-1 flex flex-col justify-between">
                         <div>
                             <h3 class="text-base font-black text-purple-950 uppercase tracking-tight">${srv.title}</h3>
@@ -116,13 +124,13 @@
                 customerName: document.getElementById('c-name').value.trim(),
                 customerPhone: document.getElementById('c-phone').value.trim(),
                 address: document.getElementById('c-address').value.trim(),
-                status: "pending", // Waiting for Owner Assignment Action
+                status: "pending", 
                 assignedAgent: "",
                 timestamp: new Date().toISOString()
             };
 
             push(ref(db, 'lasya_bookings'), payload).then(() => {
-                alert("Order submitted! Lasya beauty supervisor will assign an expert beautician shortly.");
+                alert("Order submitted successfully! The owner will assign an expert beautician shortly.");
                 document.getElementById('customer-booking-form').reset();
                 closeBookingModal();
             });
